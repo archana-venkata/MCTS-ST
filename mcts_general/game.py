@@ -10,7 +10,7 @@ from copy import deepcopy
 
 import gym
 
-from mcts_general.common.wrapper import DeepCopyableWrapper, DiscreteActionWrapper
+from common.wrapper import DeepCopyableWrapper, DiscreteActionWrapper
 
 
 class DeepCopyableGame(metaclass=abc.ABCMeta):
@@ -95,8 +95,9 @@ class GymGame(DeepCopyableGame, metaclass=abc.ABCMeta):
             self.render_copy.close()
 
     def step(self, action, simulation=False):
-        obs, rew, done, _ = self.env.step(action)
-        return obs, rew, done
+        obs, rew, done, info = self.env.step(action)
+        # done = terminated or truncated
+        return obs, rew, done, info
 
     def render(self, mode='human', **kwargs):
         # This workaround is necessary because a game / a gym env that is rendering cannot be deepcopied
@@ -127,11 +128,12 @@ class DiscreteGymGame(GymGame):
 
     def step(self, action, simulation=False):
         action = int(action)
-        obs, rew, done = super(DiscreteGymGame, self).step(action, simulation)
-        return obs, rew, done
+        obs, rew, done, info = super(DiscreteGymGame, self).step(action, simulation)
+        return obs, rew, done, info
 
     def legal_actions(self, simulation=False):
-        return [i for i in range(self.env.action_space.n)]
+        actions = numpy.array(range(self.env.action_space.n))
+        return actions[self.env.valid_action_mask()]
 
     def sample_action(self, simulation=False):
         legal_actions = self.legal_actions(simulation=simulation)
@@ -189,14 +191,14 @@ class GymGameWithMacroActions(DiscreteGymGame):
             reward = 0.
             mac_act = self.macro_actions[action]
             for a in mac_act:
-                obs, rew, done = super(GymGameWithMacroActions, self).step(a)
+                obs, rew, done, info = super(GymGameWithMacroActions, self).step(a)
                 reward += rew
             reward /= len(mac_act)  # return avg reward on macro action trajectory
         else:
             # in evaluation just take one step
-            obs, reward, done = super(GymGameWithMacroActions, self).step(action)
+            obs, reward, done, info = super(GymGameWithMacroActions, self).step(action)
 
-        return obs, reward, done
+        return obs, reward, done, info
 
     def get_copy(self) -> "GymGameWithMacroActions":
         return GymGameWithMacroActions(
@@ -239,11 +241,11 @@ class PendulumGameWithEngineeredMacroActions(GymGameWithMacroActions):
         macro_actions = []
         for action in super(PendulumGameWithEngineeredMacroActions, self).legal_actions(simulation=False):
             game_copy = self.get_copy()
-            [cos_theta, sin_theta, theta_dot], _, done = game_copy.step(action)
+            [cos_theta, sin_theta, theta_dot], _, done, _ = game_copy.step(action)
             sign = numpy.sign(theta_dot)
             it = 1
             while sign == numpy.sign(theta_dot) and it <= self._max_macro_action_len and not done:
-                [cos_theta, sin_theta, theta_dot], _, done = game_copy.step(action)
+                [cos_theta, sin_theta, theta_dot], _, done, _ = game_copy.step(action)
                 it += 1
             macro_actions.append(numpy.ones(it) * action)
         return macro_actions

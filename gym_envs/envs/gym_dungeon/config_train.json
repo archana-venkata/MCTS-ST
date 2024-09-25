@@ -1,0 +1,11 @@
+{
+    "default": 0,
+    "weapon": 10,
+    "key": 50,
+    "kill": 100,
+    "door": 200,
+    "wall": 0,
+    "moved": 0,
+    "died": 1,
+    "out of moves": 0
+}

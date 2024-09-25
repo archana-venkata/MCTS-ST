@@ -1,5 +1,6 @@
 import math
 import numpy
+import itertools
 
 from mcts_general.common.normalize import MinMaxStats
 from mcts_general.config import MCTSAgentConfig, MCTSContinuousAgentConfig
@@ -58,7 +59,10 @@ class MCTS:
         self.config = config
         self.node_cls = Node
 
-    def run(
+    def seed(self, seed=None):
+        numpy.random.seed(seed)
+
+    def simulate(
         self,
         observation,
         reward,
@@ -111,7 +115,7 @@ class MCTS:
             if not parent.done:
 
                 game_copy = parent.game.get_copy()
-                observation, reward, done = game_copy.step(action, simulation=True)
+                observation, reward, done, info = game_copy.step(action, simulation=True)
 
                 if self.config.do_roll_outs:
                     value = get_roll_out(game_copy,
@@ -147,10 +151,9 @@ class MCTS:
         """
         Select the child with the highest UCB score.
         """
-        max_ucb = max(
-            self.ucb_score(node, child, min_max_stats)
-            for action, child in node.children.items()
-        )
+        ucb_scores = [self.ucb_score(node, child, min_max_stats)
+                      for action, child in node.children.items()]
+        max_ucb = max(ucb_scores)
         action = numpy.random.choice(
             [
                 action
@@ -202,7 +205,10 @@ class MCTS:
 
 class Node:
 
+    id_iter = itertools.count()
+
     def __init__(self, prior=1):
+        self.id = next(self.id_iter)
         self.visit_count = 0
         self.to_play = -1
         self.prior = prior      # uniform prior
@@ -212,6 +218,16 @@ class Node:
         self.reward = 0
         self.done = False
         self.game = None
+
+    def __str__(self) -> str:
+        return f"Node(\'{self.id}\', \'{len(self.children)}\',\'{self.info}\',\'{self.reward}\',\'{self.done}\')"
+
+    def status(self):
+        print(
+            f"NODE: id: {self.id}, visits: {self.visit_count}")
+        for key, child in self.children.items():
+            print(
+                f"CHILD: id: {child.id}, visits: {child.visit_count}")
 
     def expanded(self):
         return len(self.children) > 0
@@ -263,7 +279,7 @@ class ContinuousMCTS(MCTS):
         self.config = config
         self.node_cls = ContinuousNode
 
-    def run(
+    def simulate(
             self,
             observation,
             reward,
@@ -272,7 +288,7 @@ class ContinuousMCTS(MCTS):
             add_exploration_noise,
             override_root_with=None,
     ):
-        return super(ContinuousMCTS, self).run(
+        return super(ContinuousMCTS, self).simulate(
             observation,
             reward,
             done,

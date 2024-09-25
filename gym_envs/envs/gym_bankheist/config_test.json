@@ -1,0 +1,13 @@
+{
+    "default": 0,
+    "moved": 0,
+    "wall": 0,
+    "rob bank": 10,
+    "drop dynamite": 0,
+    "blown up": 0,
+    "destroy policecar": 10,
+    "collect fueltank": 0,
+    "refuel": 1,
+    "caught": 0,
+    "out of fuel": 0
+}

@@ -1,2 +1,7 @@
-gym~=0.17.2
-numpy~=1.19.2
+getch==1.0
+gym==0.17.3
+matplotlib==3.7.4
+networkx==3.1
+numpy==1.23.2
+setuptools==68.2.2
+tqdm==4.66.1
