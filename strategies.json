@@ -1,0 +1,1438 @@
+{
+    "SimplePacman-v0": {
+        "strategies": [
+            {
+                "reward": 200,
+                "strategy": [
+                    "collect(dot)",
+                    "kill(ghost)"
+                ]
+            },
+            {
+                "reward": 200,
+                "strategy": [
+                    "collect(powerup)",
+                    "kill(ghost)"
+                ]
+            }
+        ]
+    },
+    "DungeonCrawler-v0": {
+        "strategies": [
+            {
+                "reward": 100,
+                "strategy": [
+                    "collect(key)",
+                    "kill(monster)"
+                ]
+            },
+            {
+                "reward": 100,
+                "strategy": [
+                    "collect(gun)",
+                    "kill(monster)"
+                ]
+            },
+            {
+                "reward": 100,
+                "strategy": [
+                    "collect(sword)",
+                    "kill(monster)"
+                ]
+            },
+            {
+                "reward": 200,
+                "strategy": [
+                    "collect(gun)",
+                    "unlock(door)"
+                ]
+            },
+            {
+                "reward": 200,
+                "strategy": [
+                    "collect(sword)",
+                    "unlock(door)"
+                ]
+            },
+            {
+                "reward": 200,
+                "strategy": [
+                    "collect(key)",
+                    "unlock(door)"
+                ]
+            }
+        ]
+    },
+    "SimpleSaladChef-v0": {
+        "strategies": [
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(cutting_station)",
+                    "get(cut_ingredients)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(mixing_station)",
+                    "get(cut_ingredients)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(plating station)",
+                    "get(cut_ingredients)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(serving_station)",
+                    "get(cut_ingredients)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(cutting_station)",
+                    "get(cut_ingredients)",
+                    "at(cutting_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(cutting_station)",
+                    "get(cut_ingredients)",
+                    "at(mixing_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(cutting_station)",
+                    "get(cut_ingredients)",
+                    "at(plating station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(cutting_station)",
+                    "get(cut_ingredients)",
+                    "at(serving_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(mixing_station)",
+                    "get(cut_ingredients)",
+                    "at(cutting_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(mixing_station)",
+                    "get(cut_ingredients)",
+                    "at(mixing_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(mixing_station)",
+                    "get(cut_ingredients)",
+                    "at(plating station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(mixing_station)",
+                    "get(cut_ingredients)",
+                    "at(serving_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(plating station)",
+                    "get(cut_ingredients)",
+                    "at(cutting_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(plating station)",
+                    "get(cut_ingredients)",
+                    "at(mixing_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(plating station)",
+                    "get(cut_ingredients)",
+                    "at(plating station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(plating station)",
+                    "get(cut_ingredients)",
+                    "at(serving_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(serving_station)",
+                    "get(cut_ingredients)",
+                    "at(cutting_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(serving_station)",
+                    "get(cut_ingredients)",
+                    "at(mixing_station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(serving_station)",
+                    "get(cut_ingredients)",
+                    "at(plating station)",
+                    "make(dish)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ingredient)",
+                    "collect(plate)",
+                    "at(serving_station)",
+                    "get(cut_ingredients)",
+                    "at(serving_station)",
+                    "make(dish)"
+                ]
+            }
+        ]
+    },
+    "SimpleMinecraft-v0": {
+        "strategies": [
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(wood)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(stone)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(ironore)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(wood)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(wood)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(stone)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(stone)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(ironore)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(ironore)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(diamond)",
+                    "at(workbench)",
+                    "get(iron_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(wood_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(stone_pickaxe)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(iron_ingot)"
+                ]
+            },
+            {
+                "reward": 1,
+                "strategy": [
+                    "collect(diamond)",
+                    "collect(diamond)",
+                    "at(furnace)",
+                    "get(iron_pickaxe)"
+                ]
+            }
+        ]
+    }
+}

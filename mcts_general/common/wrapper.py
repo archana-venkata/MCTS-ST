@@ -1,7 +1,7 @@
 from copy import deepcopy
 
-import gym
-from gym.spaces import Discrete
+import gymnasium as gym
+from gymnasium.spaces import Discrete
 import numpy
 
 
@@ -43,6 +43,8 @@ class ScaledRewardWrapper(gym.RewardWrapper):
 
 
 class DeepCopyableWrapper(gym.Wrapper):
+    def __init__(self, env):
+        super().__init__(env)
 
     def __deepcopy__(self, memodict={}):
         cls = self.__class__

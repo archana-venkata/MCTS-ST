@@ -2,7 +2,8 @@ from distutils.command.config import config
 import os
 import matplotlib.pyplot as plt
 import numpy as np
-from gym import Env, spaces
+import gymnasium as gym
+from gymnasium import spaces
 import logging
 import sys
 import math
@@ -109,12 +110,12 @@ class Ghost():
         self._moves_left = self._can_die_moves
 
 
-class PacmanEnv(Env):
+class PacmanEnv(gym.Env):
 
     _metadata = {"render_modes": ["human"]}
-    _max_episode_steps = 200
-    _env_features = ['moved', 'wall', 'dot', 'powerup',
-                     'killed a ghost', 'lost a life']
+    _max_episode_steps = 10000
+    _env_features = ['move()', 'wall()', 'collect(dot)', 'collect(powerup)',
+                     'kill(ghost)', 'died()']
 
     def __init__(self, map_file="map.txt", config_file="config_train.json"):
         self.map_file = map_file
@@ -176,9 +177,6 @@ class PacmanEnv(Env):
         # respective actions of agents : up, down, left and right
         self.action_space = spaces.Discrete(self._nA)
 
-        # TODO: Work out what type of observation space works best for this env
-        # set the observation space to the location pacman could be in times the number of dots left in the grid
-        # plus 1 to account for the 'dead' state
         self.observation_space = self.get_observation_space()
 
         self.create_graph_rep()
@@ -208,7 +206,7 @@ class PacmanEnv(Env):
         col = self._location[1]
         possible_moves = [[row, col-1],
                           [row+1, col], [row, col+1], [row-1, col]]
-        return np.array([int(move not in self._walls) for move in possible_moves], dtype=np.bool)
+        return np.array([int(move not in self._walls) for move in possible_moves], dtype=bool)
 
     def create_graph_rep(self):
         self.create_grid()
@@ -233,6 +231,14 @@ class PacmanEnv(Env):
         obs = np.asarray(board, dtype=np.uint8)
 
         return obs
+
+    def make_info(self, result_of_action=[], rewards_per_action=[]):
+        info = {
+            "result_of_action": result_of_action,
+            "rewards_per_action": rewards_per_action,
+            "score": self._score
+        }
+        return info
 
     def distance_to(self, pos1, pos2):
         if pos1 == None or pos2 == None:
@@ -264,7 +270,7 @@ class PacmanEnv(Env):
         elif self._successive_kills[1] == 0:
             self._successive_kills = [0, 5]
 
-        done = False
+        terminated = False
         info = {}
         reward = self._rewards["default"]
         rewards = []
@@ -368,27 +374,24 @@ class PacmanEnv(Env):
                     # pacman is out of lives
                     # reset
                     self._dead = True
-                    done = True
+                    terminated = True
                 break
 
         self._score += reward
-        info = {
-            "result_of_action": result_of_action,
-            "rewards_per_action": rewards,
-            "score": self._score
-        }
+
+        info = self.make_info(result_of_action, rewards)
 
         # For debugging: output the result of the action taken by the agent
         logging.debug(f'Result of action: {result_of_action}')
 
         # YOU'VE WON!
         if (len(self._dots)+len(self._powerups)) == 0:
-            done = True
+            terminated = True
 
         # update the observation
         observation = self.make_observation()
 
-        return observation, reward, done, info
+        return observation, reward, terminated, False, info
 
     # Used for rendering the environment in the console
     # creates a 2d array with characters to represent the entities in the environment
@@ -418,7 +421,8 @@ class PacmanEnv(Env):
             self.grid[self._location[0]][self._location[1]] = ' '
 
     # reset the environment to its initial state
-    def reset(self):
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
         # reset the dots, powerups and empty spaces
         self._dots = self._start_configuration["dots"].copy()
         self._powerups = self._start_configuration["powerups"].copy()
@@ -436,8 +440,9 @@ class PacmanEnv(Env):
             ghost.reset()
 
         observation = self.make_observation()
+        info = self.make_info()
 
-        return observation
+        return observation, info
 
     # render the environment
     def render(self, mode="human"):
@@ -458,9 +463,6 @@ class PacmanEnv(Env):
 
     def close(self):
         pass
-
-    def seed(self, seed=None):
-        return super().seed(seed)
 
 
 def output_to_file():
@@ -484,7 +486,6 @@ if __name__ == '__main__':
     env = PacmanEnv()
 
     seed = 4312
-    env.seed(seed)
 
     num_episodes = 1
     num_moves = 10
@@ -492,21 +493,21 @@ if __name__ == '__main__':
     episode_trajectory = []
     # testing the environment by playing a number of episodes
     for episode in range(num_episodes):
-        observation = env.reset()
+        observation = env.reset(seed=seed)
 
         # render the environment at the beginning of each episode
         env.render()
         print('')
 
-        done = False
+        terminated = False
         score = 0
 
         # play a certain number of moves for each episode
-        while not done:
+        while not terminated:
             # char = getch.getch()
             # action = int(char)
-            # observation, reward, done, info = env.step(action)
-            observation, reward, done, info = env.step(
+            # observation, reward, terminated, info = env.step(action)
+            observation, reward, terminated, info = env.step(
                 env.action_space.sample())
             score += reward
 

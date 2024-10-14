@@ -1,8 +1,14 @@
 import os
+import matplotlib.pyplot as plt
 import numpy as np
-from gym import Env, spaces
+from gymnasium import Env, spaces
 import logging
+import sys
+import math
+import getch
+from torch import true_divide
 import json
+import time
 import random
 import networkx as nx
 
@@ -12,6 +18,7 @@ DOWN = 1
 RIGHT = 2
 UP = 3
 actions_str = ["LEFT", "DOWN", "RIGHT", "UP"]
+# env.unwrapped.get_action_meanings()
 
 MAX_DISTANCE = 1000
 
@@ -41,8 +48,8 @@ class DungeonCrawlerEnv(Env):
 
     metadata = {'render.modes': ['console', 'rgb_array', 'human']}
     _max_episode_steps = 10000
-    action_desc = ['moved', 'wall', 'locked door', 'key', 'weapon',
-                   'killed a monster', 'unlocked door', 'died', 'out of moves']
+    action_desc = ['move()', 'wall()', 'lock(door)', 'collect(key)', 'collect(weapon)',
+                   'kill(monster)', 'unlock(door)', 'died()', 'out_of_moves()']
 
     def __init__(self, map_file="map.txt", config_file="config_train.json"):
         super(DungeonCrawlerEnv, self).__init__()
@@ -64,6 +71,7 @@ class DungeonCrawlerEnv(Env):
         self.goal = None
         self.dead = False
         self.visited = []
+        self.done = False
         if "simple" in self.map_file:
             self.total_weapon = 1
         else:
@@ -76,6 +84,7 @@ class DungeonCrawlerEnv(Env):
         # reward configuration is read from file
         with open(config_filename) as f:
             self._rewards = json.load(f)
+            # self.reward_range = (0, 5, 10, 100, 200)
 
         self.nrow = None
         self.ncol = None
@@ -112,6 +121,11 @@ class DungeonCrawlerEnv(Env):
         # respective actions of players : up, down, left and right
         self.action_space = spaces.Discrete(self.nA)
 
+        # number of possible locations for the player
+        # x3 for the number of items the player may have at anytime
+        # self.nS = ((self.nrow * self.ncol) - (len(self.walls))) * \
+        #     (len(self.weapons) + len(self.keys)+1 +
+        #      (len(self.monsters)+1) + self.move_count)
         self.nS = (self.nrow * self.ncol) - (len(self.walls))
 
         # Create the observation space
@@ -119,8 +133,15 @@ class DungeonCrawlerEnv(Env):
 
         self.create_graph_rep()
 
-    # set random locations for weapons
+    # set random locations for entities including:
+    # monsters and weapons
+
     def random_entity_locations(self, no_of_weapons=1):
+        # # randomly place the monster in one of the empty spaces in grid
+        # monster_index = random.randrange(len(self.empty))
+        # self.monsters.append(self.empty[monster_index])
+        # self.empty.remove(self.empty[monster_index])
+
         # randomly place weapons in random empty spaces in grid
         for i in range(no_of_weapons):
             sword_index = random.randrange(len(self.empty))
@@ -144,6 +165,7 @@ class DungeonCrawlerEnv(Env):
     # weapon = 4
     # blank space = 5
     # door = 6
+    # An observation is list of lists, where each list represents a row
 
     _layers = ['X', 'o', 's', 'g', 'k', 'Z', '|', ' ']
 
@@ -165,7 +187,7 @@ class DungeonCrawlerEnv(Env):
 
             action_mask.append(value)
 
-        return np.array(action_mask, dtype=np.bool)
+        return np.array(action_mask, dtype=bool)
 
     def create_graph_rep(self):
         self.create_grid()
@@ -205,6 +227,14 @@ class DungeonCrawlerEnv(Env):
 
         return obs
 
+    def make_info(self, result_of_action=[], rewards_per_action=[]):
+        info = {
+            "result_of_action": result_of_action,
+            "rewards_per_action": rewards_per_action,
+            "score": self.score
+        }
+        return info
+
     def distance_to(self, pos1, pos2):
         if pos1 == None or pos2 == None:
             return 0
@@ -214,7 +244,7 @@ class DungeonCrawlerEnv(Env):
         # player moves based on a given action
         logging.debug(f'Moved {actions_str[action]}')
 
-        done = False
+        terminated = False
         info = {}
         reward = self._rewards["default"]
         rewards = []
@@ -238,16 +268,17 @@ class DungeonCrawlerEnv(Env):
             elif action == UP and [row-1, col] not in self.walls:
                 self.location = [row-1, col]
 
+            # print(
+            #     f'distance to goal: {self.distance_to(self.location, self.goal)}')
+
             # check if the player has reached a door
             if self.location == self.door:
                 # WIN!!
-                # TODO: if there are multiple doors,
-                # only if the door is the final door does the player win
                 if 'key' in self.items:
                     self.door = None
                     self.empty.append([row, col])
                     reward += self._rewards["door"]
-                    done = True
+                    terminated = True
                     self.items.remove('key')  # one key has been used
                     rewards.append(reward)
                     self.end = True
@@ -261,12 +292,12 @@ class DungeonCrawlerEnv(Env):
                     rewards.append(reward)
         else:
             # Stop if exceeded the amount of allowed moves
-            done = True
+            terminated = True
             results_of_action.append(self.action_desc[8])
             reward -= self._rewards["out of moves"]
             rewards.append(reward)
 
-        if not done:
+        if not terminated:
             # if the player has moved, add to the list of empty spaces
             if self.location != [row, col]:
 
@@ -313,9 +344,10 @@ class DungeonCrawlerEnv(Env):
                     # reward for collecting a weapon
                     reward += self._rewards["weapon"]
                     self.items.append('weapon')
-                    # print(f"Cogit rm --cached -f *.DS_Storellected {weapon.get_type()}")
+
                     results_of_action.append(
-                        weapon.type + " " + self.action_desc[4])
+                        self.action_desc[4].replace("weapon", weapon.type))
+
                     rewards.append(reward)
 
             # If there is a monster at the new location, player either
@@ -336,18 +368,13 @@ class DungeonCrawlerEnv(Env):
                     # or player does not have any weapons
                     # game over
                     self.dead = True
-                    done = True
+                    terminated = True
                     reward -= self._rewards["died"]
                     results_of_action.append(self.action_desc[7])
                     rewards.append(reward)
 
         self.score += reward
-        info = {
-            "result_of_action": results_of_action,
-            "rewards_per_action": rewards,
-            "score": self.score
-
-        }
+        info = self.make_info(results_of_action, rewards)
 
         # For debugging: output the result of the action taken by the player
         logging.debug(f'Results of action: {results_of_action}')
@@ -355,7 +382,9 @@ class DungeonCrawlerEnv(Env):
         # update the observation
         observation = self.make_observation()
 
-        return observation, reward, done, info
+        self.done = terminated
+
+        return observation, reward, terminated, False, info
 
     # Used for rendering the environment in the console
     # creates a 2d array with characters to represent the entities in the environment
@@ -386,7 +415,8 @@ class DungeonCrawlerEnv(Env):
             self.grid[self.location[0]][self.location[1]] = 'o'
 
     # reset the environment to its initial state
-    def reset(self):
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
         # reset the dots, powerups and empty spaces
         self.monsters = self.start_configuration["monsters"].copy()
         self.door = self.start_configuration["door"].copy()
@@ -402,6 +432,7 @@ class DungeonCrawlerEnv(Env):
         self.weapons = []
         self.key = None
         self.visited = []
+        self.done = False
 
         # randomly place items in empty spaces in grid
         self.random_entity_locations(no_of_weapons=self.total_weapon)
@@ -409,8 +440,9 @@ class DungeonCrawlerEnv(Env):
         self.goal = self.key.copy()
 
         observation = self.make_observation()
+        info = self.make_info()
 
-        return observation
+        return observation, info
 
     # render the environment
 
@@ -452,3 +484,61 @@ class DungeonCrawlerEnv(Env):
                 row -= 1
 
         return [row, col]
+
+
+def output_to_file():
+    # helper function to redirect stdout to file
+    orig_stdout = sys.stdout
+    file = open('temp_output/out.txt', 'w')
+    sys.stdout = file
+    return file, orig_stdout
+
+
+def return_output_to_console(file, orig_stdout):
+    sys.stdout = orig_stdout
+    file.close()
+
+
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.debug('This is a log message.')
+
+    env = DungeonCrawlerEnv()
+    observation = env.reset()
+
+    num_episodes = 10
+    print(f"size of environment is: {env.nrow} x {env.ncol}")
+    # testing the environment by playing a number of episodes
+    for episode in range(num_episodes):
+        observation = env.reset()
+
+        # render the environment at the beginning of each episode
+        env.render()
+        print('')
+
+        terminated = False
+        score = 0
+
+        frames = []
+        fps = 24
+
+        # play a certain number of moves for each episode
+        while not terminated:
+            char = getch.getch()
+            action = int(char)
+            obs, reward, terminated, truncated, info = env.step(action)
+            score += reward
+
+            env.render()
+            print()
+            frames.append(env.get_grid())
+
+        for frame in frames:
+            print('\n'.join(' '.join(x for x in y) for y in frame))
+            time.sleep(0.1)
+            os.system('clear')
+
+        # and print the final score
+        print('Episode: {}, Score: {}'.format(episode, score))
+        print('')

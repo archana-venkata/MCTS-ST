@@ -14,3 +14,5 @@ class MCTSAgentConfig:
         self.number_of_roll_outs = 1
         self.max_roll_out_depth = 20
         self.do_roll_out_steps_with_simulation_true = False
+        self.use_strategies = True
+        self.tau = 0.1
