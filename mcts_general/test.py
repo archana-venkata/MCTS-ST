@@ -39,15 +39,15 @@ def init(env_name, seed):
 
 
 def main():
-    debug = True
+    debug = False
     if not debug:
         writer = SummaryWriter()
 
     game, agent = init("DungeonCrawler-v0", 123)
-    episodes = 1
+    episodes = 10
     scores = []
     step_count = 0
-    # run a trajectoryxP
+    # run a trajectory
     for i in tqdm(range(episodes)):
         history = []
         state = game.reset()
@@ -55,6 +55,7 @@ def main():
         info = None
         score = 0
         reward = 0
+        agent.reset()
         print(f"Episode {i}")
         while not done:
             action = agent.search(game, state, reward, done, history)
@@ -62,7 +63,7 @@ def main():
             state, reward, done, info = game.step(action)
             step_count += 1
             for j in info["result_of_action"]:
-                history.append(j)
+                history.append((action, j))
             score += reward
             if done:
                 print(f"Episode score: {score}")

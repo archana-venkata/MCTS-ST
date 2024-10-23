@@ -6,41 +6,22 @@ from tqdm import tqdm
 import math
 import numpy as np
 import itertools
+import random
+from itertools import product
+
 
 actions_str = ["LEFT", "DOWN", "RIGHT", "UP"]
 
 
-def hasEvent(element, event):
+def hasEvent(element, event, appear_after=None):
     indices = [i for i, v in enumerate(element) if v[1] == event]
+    if appear_after != None: 
+        prev_event_indices = [i for i, v in enumerate(element) if v[1] == appear_after]
     if len(indices) > 0:
+        if appear_after != None:
+            return any(i > j for i, j in product(indices, prev_event_indices))
         return True
     return False
-
-
-def calc_action_uncertainties(action, event, possible_next_actions):
-    # get all strategies containing 'event'
-    for strategy in [x for x in strategies if event in x]:
-        index = strategy.index(event)
-        next_event = strategy[index+1]
-        print(next_event)
-        # get all rollouts containing the next event in the strategy 'next_event'
-        subset_rollouts = [rollout for rollout in rollouts if hasEvent(rollout, next_event)]
-        if len(subset_rollouts) == 0:
-            alt_subset_rollouts = [rollout for rollout in rollouts if hasEvent(rollout, event)]
-            for rollout in alt_subset_rollouts:
-                event_indices = [i for i, v in enumerate(rollout) if v[1] == event]
-                if len(event_indices) > 0:
-                    next_action = rollout[event_indices[0]+1][0]
-                    possible_next_actions[next_action] -= 0.1
-            return possible_next_actions
-
-        for rollout in subset_rollouts:
-            event_indices = [i for i, v in enumerate(rollout) if v[1] == event]
-            if len(event_indices) > 0:
-                print(f"next action: {rollout[event_indices[0]+1][0]}")
-                next_action = rollout[event_indices[0]+1][0]
-                possible_next_actions[next_action] += 0.1
-    return possible_next_actions
 
 
 def is_subsequence(a, b):
@@ -107,9 +88,9 @@ class Node:
     def value(self):
         if self.visit_count == 0 or self.done:
             return 0
-        return self.value_sum / self.visit_count
+        return self.value_sum 
 
-    def expand(self, env, observation, done, reward, history, initial_visit_count=0):
+    def expand(self, env, observation, done, reward, history, strategy_value=0, initial_visit_count=0):
         """
         We expand a node using the value, reward and policy prediction obtained from the
         neural network. 
@@ -117,6 +98,7 @@ class Node:
         self.is_expanded = True
         self.done = done
         self.reward = reward
+        self.strategy_value = strategy_value
         self.observation = observation
         self.visit_count = initial_visit_count
         self.env = env
@@ -149,6 +131,13 @@ class MCTSAgent:
     def __init__(self, env: DeepCopyableGame, config: MCTSAgentConfig):
         self.config = config
         self.node_cls = Node
+        self.rollout_buffer = []
+        self.strategy_decay = self.config.init_decay
+
+    def reset(self):
+        self.rollout_buffer = []
+        if self.config.use_strategies:
+            self.strategy_decay = self.config.init_decay
 
     def seed(self, seed=None):
         np.random.seed(seed)
@@ -163,8 +152,10 @@ class MCTSAgent:
             self.root_node = root_node
 
         # self.result_node.status()
-        self.render_tree(root_node)
+        # self.render_tree(root_node)
         action, _ = self.select_child(self.root_node)
+        if len(history) % 10:
+            self.strategy_decay *= 0.99
         # print(f"Action: {action}")
 
         if output_debug_info:
@@ -200,9 +191,9 @@ class MCTSAgent:
             game_copy = parent.env.get_copy()
             observation, reward, done, info = game_copy.step(action, simulation=True)
             for j in info["result_of_action"]:
-                history.append(j)
+                history.append((action, j))
             if self.config.do_roll_outs:
-                value = self.get_roll_out(game_copy, history.copy())
+                value, strategy_value = self.get_roll_out(game_copy, history.copy())
                 initial_visit_count = self.config.number_of_roll_outs - 1    # -1 because of increment in backprop
             else:
                 value = reward
@@ -214,6 +205,7 @@ class MCTSAgent:
                 done,
                 reward,
                 history,
+                strategy_value,
                 initial_visit_count=initial_visit_count
             )
         else:
@@ -232,85 +224,68 @@ class MCTSAgent:
         for node in reversed(search_path):
             node.value_sum += value
             node.visit_count += 1
-            # min_max_stats.update(node.reward + self.config.discount * node.value())
-
             value = node.reward + self.config.discount * value
 
     def get_roll_out(self, game, history, do_simulation_steps=False):
         if game.env.done:
-            return 0 
-        total_reward = 0
-        strategy_value = 0
+            return 0, 0 
         done = False
+        return_list = []
+        strategy_return_list = []
         for _ in range(self.config.number_of_roll_outs):
-            strategy_rewards = []
-            trajectory_rewards = []
             game_copy = game.get_copy()
-            rollout_trajectory = history
+            rollout_trajectory = history.copy()
+            single_return = 0
+            strategy_return = 0
             for it in range(self.config.max_roll_out_depth):
                 if done:
                     break
+
+                ######### USE STRATEGIES #########
+                # if self.config.use_strategies:
+
+                #     action_probs = self.calc_action_uncertainty(rollout_trajectory[-1][1], game_copy.env.unwrapped.nA)
+
+                #     action = random.choice([i for i in range(len(action_probs)) if action_probs[i] == max(action_probs)])
+                ##################################
+
+                # else:
                 action = game_copy.sample_action()  # randomly sample an action for rollouts
+
                 _, reward, done, info = game_copy.step(action, simulation=do_simulation_steps)
 
                 for i in info["result_of_action"]:
-                    rollout_trajectory.append(i)
+                    rollout_trajectory.append((action, i))
 
-                trajectory_rewards.append(reward * self.config.discount)
-                if self.config.use_strategies:
-                    strategy_rewards.append(self.calc_new_reward(rollout_trajectory, reward))
+                single_return += reward * self.config.discount
 
-            # TODO: check how many strategies are followed in each rollout
-            trajectory_rewards = np.asarray(trajectory_rewards)
-            strategy_rewards = np.asarray(strategy_rewards)
+            # what if return is number of strategies?
+            # TODO: Combine return as reward and number of strategies then decay influence of strategies as time goes on
 
-            if self.config.use_strategies:
+            for strategy in self.config.strategies:
+                decay_param = self.config.init_decay
+                x, y, z = is_subsequence(strategy['strategy'], [b for _, b in rollout_trajectory])
+                if y > 0:
+                    if z and single_return > 0:
+                        decay_param = 0
 
-                weights = np.exp(strategy_rewards / self.config.tau) / np.sum(np.exp(strategy_rewards / self.config.tau))
+                    strategy_return += y * strategy['reward'] * decay_param
 
-                if len(weights) > 0:
-                    strategy_return = np.average(trajectory_rewards, weights=weights)
-                else:
-                    strategy_return = 0
+            # if strategy_return == 0:
+            #     # penalise no strategies followed in the rollout trajectory
+            #     strategy_return -= z * strategy['reward'] * decay_param
 
-                total_reward += strategy_return
-            else:
-                total_reward += sum(trajectory_rewards)
+            return_list.append(single_return)
+            strategy_return_list.append(strategy_return)
 
-        return total_reward
+            self.rollout_buffer.append(rollout_trajectory)
 
-    def calc_new_reward(self, event_trajectory, reward):
-        potentials = [0.0] * len(self.config.strategies)
-        for i, strategy in enumerate(self.config.strategies):
-            # compute how much of the strategy is being followed
-            x, y, z = is_subsequence(strategy['strategy'], event_trajectory)
-            # If the agent's trajectory indicates that one (or more) strategies have been partially followed
-            if x and z:
-                potentials[i] = y
-
-        return reward*max(potentials)
+        return np.average(return_list), np.average(strategy_return_list)
 
     def select_child(self, node):
         """
         Select the child with the highest UCB score.
         """
-        # best_value = -np.inf
-        # best_children = []
-        # best_children_prob = []
-        # for i, (action, child) in enumerate(node.children.items()):
-        #     assert len(node.children_probs) == len(node.children), print(node.children_probs)
-        #     child_prob = node.children_probs[i]
-
-        #     ucb_value = self.ucb_score(node, child, child_prob)
-
-        #     if ucb_value == best_value:
-        #         best_children.append(action)
-        #         best_children_prob.append(child_prob)
-        #     elif ucb_value > best_value:
-        #         best_value = ucb_value
-        #         best_children = [node.children[action]]
-        #         best_children_prob = [child_prob]
-
         max_ucb = max(
             self.ucb_score(node, child)
             for action, child in node.children.items()
@@ -329,28 +304,27 @@ class MCTSAgent:
         The score for a node is based on its value, plus an exploration bonus based on the prior.
         """
         # return child.value_sum + self.config.exploration_constant * child_prob * np.sqrt(parent.visit_count) / (child.visit_count + 1)
-        # Unexplored nodes have maximum values so we favour exploration
-        if child.visit_count == 0:
-            return float('inf')
-
-        pb_c = (
-            math.log(
-                (parent.visit_count + self.config.pb_c_base + 1) / self.config.pb_c_base
-            )
-            + self.config.pb_c_init
-        )
-        pb_c *= math.sqrt(parent.visit_count) / (child.visit_count + 1)
+        # Unexplored nodes have maximum values so we favour exploration    
 
         # prior_score = pb_c * child.prior
-        prior_score = pb_c * (1 / len(parent.children))     # uniform prior score
+        if child.visit_count == 0:
+            return np.inf
+        prior_score = self.config.pb_c_init * np.sqrt(np.log(parent.visit_count) / child.visit_count)  # uniform prior score
 
         if child.visit_count > 0:
             # Mean value Q
-            value_score = child.value()
+            value_score = child.value()/child.visit_count 
         else:
             value_score = 0
 
-        return prior_score + value_score
+        if self.config.use_strategies:
+            strategy_score = self.strategy_decay * child.strategy_value/child.visit_count 
+            # if strategy_score > 0:
+            #     print("this is doing something")
+        else:
+            strategy_score = 0
+
+        return prior_score + value_score + strategy_score
 
     def select_action(node, temperature):
         """
@@ -374,3 +348,32 @@ class MCTSAgent:
             )
             action = np.random.choice(actions, p=visit_count_distribution)
         return action
+
+    def calc_action_uncertainty(self, event, num_actions):
+
+        action_prob = np.ones((num_actions,)) / num_actions
+
+        # get all strategies containing 'event'
+        for strategy in [x['strategy'] for x in self.config.strategies if event in x['strategy']]:
+            if event == strategy[-1]:
+                # if the event is at the end of the strategy
+                break
+            index = strategy.index(event)
+            next_event = strategy[index+1]
+            # get all rollouts containing the next event in the strategy 'next_event'
+            subset_rollouts = [rollout for rollout in self.rollout_buffer if hasEvent(rollout, next_event, appear_after=event)]
+            if len(subset_rollouts) == 0:
+                alt_subset_rollouts = [rollout for rollout in self.rollout_buffer if hasEvent(rollout, event)]
+                for rollout in alt_subset_rollouts:
+                    event_indices = [i for i, v in enumerate(rollout) if v[1] == event]
+                    if len(event_indices) > 0 and max(event_indices)+1 < len(rollout):
+                        next_action = rollout[event_indices[0]+1][0]
+                        action_prob[next_action] = 0
+                return action_prob
+
+            for rollout in subset_rollouts:
+                event_indices = [i for i, v in enumerate(rollout) if v[1] == event]
+                if len(event_indices) > 0 and max(event_indices)+1 < len(rollout):
+                    next_action = rollout[event_indices[0]+1][0]
+                    action_prob[next_action] = 1
+        return action_prob

@@ -16,3 +16,4 @@ class MCTSAgentConfig:
         self.do_roll_out_steps_with_simulation_true = False
         self.use_strategies = True
         self.tau = 0.1
+        self.init_decay = 0.95
