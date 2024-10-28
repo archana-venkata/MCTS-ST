@@ -10,7 +10,7 @@ import random
 from itertools import product
 
 
-actions_str = ["LEFT", "DOWN", "RIGHT", "UP"]
+ACTIONS_STR = ["LEFT", "DOWN", "RIGHT", "UP"]
 
 
 def hasEvent(element, event, appear_after=None):
@@ -98,6 +98,7 @@ class Node:
         self.is_expanded = True
         self.done = done
         self.reward = reward
+        # if history contains partially completed strategies can initialise this to a high value
         self.strategy_value = strategy_value
         self.observation = observation
         self.visit_count = initial_visit_count
@@ -154,7 +155,7 @@ class MCTSAgent:
         # self.result_node.status()
         # self.render_tree(root_node)
         action, _ = self.select_child(self.root_node)
-        if len(history) % 10:
+        if self.config.use_strategies and len(history) % 10:
             self.strategy_decay *= 0.99
         # print(f"Action: {action}")
 
@@ -164,7 +165,7 @@ class MCTSAgent:
             return action
 
     def render_tree(self, node, action=None):
-        print(f"node: {node.id}, action: {actions_str[action] if action!=None else action}, value: {node.value()}")
+        print(f"node: {node.id}, action: {ACTIONS_STR[action] if action!=None else action}, value: {node.value()}")
         if node.expanded():
             print(f"node: {node.id} has {len(node.children.items())} children")
             for action, node in node.children.items():
@@ -241,15 +242,6 @@ class MCTSAgent:
                 if done:
                     break
 
-                ######### USE STRATEGIES #########
-                # if self.config.use_strategies:
-
-                #     action_probs = self.calc_action_uncertainty(rollout_trajectory[-1][1], game_copy.env.unwrapped.nA)
-
-                #     action = random.choice([i for i in range(len(action_probs)) if action_probs[i] == max(action_probs)])
-                ##################################
-
-                # else:
                 action = game_copy.sample_action()  # randomly sample an action for rollouts
 
                 _, reward, done, info = game_copy.step(action, simulation=do_simulation_steps)
@@ -262,25 +254,25 @@ class MCTSAgent:
             # what if return is number of strategies?
             # TODO: Combine return as reward and number of strategies then decay influence of strategies as time goes on
 
-            for strategy in self.config.strategies:
-                decay_param = self.config.init_decay
-                x, y, z = is_subsequence(strategy['strategy'], [b for _, b in rollout_trajectory])
-                if y > 0:
-                    if z and single_return > 0:
-                        decay_param = 0
+            if self.config.use_strategies:
+                for strategy in self.config.strategies:
+                    decay_param = self.config.init_decay
+                    x, y, z = is_subsequence(strategy['strategy'], [b for _, b in rollout_trajectory])
+                    if y > 0:
+                        if z and single_return > 0:
+                            decay_param = 0
 
-                    strategy_return += y * strategy['reward'] * decay_param
+                        single_return *= (y*decay_param)
 
-            # if strategy_return == 0:
-            #     # penalise no strategies followed in the rollout trajectory
-            #     strategy_return -= z * strategy['reward'] * decay_param
+                # if strategy_return == 0:
+                #     # penalise no strategies followed in the rollout trajectory
+                #     strategy_return -= z * strategy['reward'] * decay_param
 
             return_list.append(single_return)
-            strategy_return_list.append(strategy_return)
 
             self.rollout_buffer.append(rollout_trajectory)
 
-        return np.average(return_list), np.average(strategy_return_list)
+        return np.average(return_list)
 
     def select_child(self, node):
         """
@@ -348,32 +340,3 @@ class MCTSAgent:
             )
             action = np.random.choice(actions, p=visit_count_distribution)
         return action
-
-    def calc_action_uncertainty(self, event, num_actions):
-
-        action_prob = np.ones((num_actions,)) / num_actions
-
-        # get all strategies containing 'event'
-        for strategy in [x['strategy'] for x in self.config.strategies if event in x['strategy']]:
-            if event == strategy[-1]:
-                # if the event is at the end of the strategy
-                break
-            index = strategy.index(event)
-            next_event = strategy[index+1]
-            # get all rollouts containing the next event in the strategy 'next_event'
-            subset_rollouts = [rollout for rollout in self.rollout_buffer if hasEvent(rollout, next_event, appear_after=event)]
-            if len(subset_rollouts) == 0:
-                alt_subset_rollouts = [rollout for rollout in self.rollout_buffer if hasEvent(rollout, event)]
-                for rollout in alt_subset_rollouts:
-                    event_indices = [i for i, v in enumerate(rollout) if v[1] == event]
-                    if len(event_indices) > 0 and max(event_indices)+1 < len(rollout):
-                        next_action = rollout[event_indices[0]+1][0]
-                        action_prob[next_action] = 0
-                return action_prob
-
-            for rollout in subset_rollouts:
-                event_indices = [i for i, v in enumerate(rollout) if v[1] == event]
-                if len(event_indices) > 0 and max(event_indices)+1 < len(rollout):
-                    next_action = rollout[event_indices[0]+1][0]
-                    action_prob[next_action] = 1
-        return action_prob
