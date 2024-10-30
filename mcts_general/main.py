@@ -1,5 +1,6 @@
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser
 import logging
+import os
 import gymnasium as gym
 
 import gym_envs
@@ -16,6 +17,15 @@ from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
 
 STRATEGY_FILE = "strategies.json"
+
+
+def save_params(args, dir_name):
+    f = os.path.join(dir_name, "params.txt")
+    os.makedirs(dir_name, exist_ok=True)
+    with open(f, "a+") as f_w:
+        f_w.write("\n")
+        for param, val in sorted(vars(args).items()):
+            f_w.write("{0}:{1}\n".format(param, val))
 
 
 class dotdict(dict):
@@ -66,6 +76,26 @@ def parse_args():
                         '-s',
                         action="store_true",
                         help='Flag to enable strategy-based MCTS')
+    parser.add_argument('--sim',
+                        type=int,
+                        default=1,
+                        choices=[1, 2],
+                        help='Method to use for the MCTS simulation step')
+    parser.add_argument('--exp',
+                        type=int,
+                        default=1,
+                        choices=[1, 2],
+                        help='Method to use for the MCTS expansion step')
+    parser.add_argument('--backprop',
+                        type=int,
+                        default=1,
+                        choices=[1, 2],
+                        help='Method to use for the MCTS backprop step')
+    parser.add_argument('--selec',
+                        type=int,
+                        default=1,
+                        choices=[1, 2],
+                        help='Method to use for the MCTS selection step')
 
     args = parser.parse_args()
 
@@ -79,19 +109,19 @@ def init(env_config, seed, use_strategies):
     if use_strategies:
         config.use_strategies = True
         strategies_df = pd.read_json(STRATEGY_FILE)
-        env_strategies = strategies_df[env_config.name].to_dict()
+        env_strategies = strategies_df[env_config["name"]].to_dict()
 
         config.strategies = env_strategies['strategies']
 
     # init game
-    env = gym.make(env_config.name, map_file=env_config.map, config_file=env_config.filename)
+    env = gym.make(env_config["name"], map_file=env_config["mapfile"], config_file=env_config["filename"])
     game = DiscreteGymGame(env=env)
 
     # set seeds
     game.reset(seed=seed)
     agent = MCTSAgent(game, config)
 
-    agent.seed(seed=seed)
+    agent.set_seed(seed=seed)
     random.seed(seed)
 
     return agent, game
@@ -118,8 +148,6 @@ def run_episode(agent, game):
         for j in info["result_of_action"]:
             history.append((action, j))
         cumulative_reward += reward
-        if done:
-            print(f"Episode score: {cumulative_reward}")
 
     agent.root_node = None
 
@@ -139,9 +167,11 @@ def main(args):
                   }
     seed = args.seed
     use_strategies = args.use_strategies
+    log_dir = f"results/exp3/{exp_id}/log_{seed}"
+    save_params(args, log_dir)  # save the experiment parameters in a text file
 
     if not debug:
-        writer = SummaryWriter(log_dir=f"exp3/{exp_id}")
+        writer = SummaryWriter(log_dir=log_dir)
     cumulative_returns = []
     agent, game = init(env_config, seed, use_strategies)
     for episode in range(num_episodes):
@@ -160,12 +190,13 @@ def main(args):
 
 
 def debug_main():
-    test_args = {'exp_id': "2-test",
+    test_args = {'exp_id': "test",
                  'env': 'DungeonCrawler-v0',
                  'env_map': "map.txt",
-                 'seed': 123,
+                 'episodes': 1,
+                 'seed': 101,
                  'use_strategies': True,
-                 'debug': False
+                 'debug': True
                  }
     # --exp_id "${exp_id}" --shaping "${shaping}" --env "${env}" --env_map "${env_map}" --timesteps "${timesteps}" -d --decay_param "${decay_param}" --decay_n 0
     main(dotdict(test_args))
@@ -176,4 +207,4 @@ if __name__ == "__main__":
                         format='%(asctime)s - %(levelname)s - %(message)s')
 
     # average_return = main(parse_args())
-    average_return = debug_main(parse_args())
+    average_return = debug_main()

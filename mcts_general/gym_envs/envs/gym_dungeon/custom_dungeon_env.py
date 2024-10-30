@@ -444,6 +444,44 @@ class DungeonCrawlerEnv(Env):
 
         return observation, info
 
+    # Functions to allow the state of the environment to be saved and reloaded (for MCTS simulation)
+    def save_state(self, seed=None):
+        state_dict = {"seed": seed,
+                      "monsters": self.monsters,
+                      "door": self.door,
+                      "empty": self.empty,
+                      "location": self.location,
+                      "dead": self.dead,
+                      "end": self.end,
+                      "score": self.score,
+                      "move_count": self.move_count,
+                      "items": self.items,
+                      "weapons": self.weapons,
+                      "key": self.key,
+                      "visited": self.visited,
+                      "done": self.done,
+                      "goal": self.goal
+                      }
+        return state_dict
+
+    def load_state(self, state_dict):
+        super().reset(seed=state_dict["seed"])
+
+        self.monsters = state_dict["monsters"]
+        self.door = state_dict["door"]
+        self.empty = state_dict["empty"]
+        self.location = state_dict["location"]
+        self.dead = state_dict["dead"]
+        self.end = state_dict["end"]
+        self.score = state_dict["score"]
+        self.move_count = state_dict["move_count"]
+        self.items = state_dict["items"]
+        self.weapons = state_dict["weapons"]
+        self.key = state_dict["key"]
+        self.visited = state_dict["visited"]
+        self.done = state_dict["done"]
+        self.goal = state_dict["goal"]
+
     # render the environment
 
     def render(self, mode="console"):

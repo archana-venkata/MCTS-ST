@@ -134,19 +134,22 @@ class MCTSAgent:
         self.node_cls = Node
         self.rollout_buffer = []
         self.strategy_decay = self.config.init_decay
+        self.simulation_strategies_completed = 0
 
     def reset(self):
         self.rollout_buffer = []
+        self.simulation_strategies_completed = 0
         if self.config.use_strategies:
             self.strategy_decay = self.config.init_decay
 
-    def seed(self, seed=None):
+    def set_seed(self, seed=None):
+        self.seed = seed
         np.random.seed(seed)
 
     def search(self, env, obs, reward, done, history, output_debug_info=False):
         self.root_node = self.node_cls(0)
 
-        self.root_node.expand(env.get_copy(), obs, done, reward, history.copy())
+        self.root_node.expand(env.get_copy(self.seed), obs, done, reward, history.copy())
 
         for i in range(self.config.num_simulations):
             root_node, info = self.simulate(self.root_node, 0)
@@ -155,7 +158,9 @@ class MCTSAgent:
         # self.result_node.status()
         # self.render_tree(root_node)
         action, _ = self.select_child(self.root_node)
-        if self.config.use_strategies and len(history) % 10:
+
+        # every 10 steps, decay the strategic contribution
+        if self.config.use_strategies and self.simulation_strategies_completed > 0 and len(history) % 10:
             self.strategy_decay *= 0.99
         # print(f"Action: {action}")
 
@@ -189,12 +194,12 @@ class MCTSAgent:
         parent = search_path[-2]
         history = parent.history
         if not parent.done:
-            game_copy = parent.env.get_copy()
+            game_copy = parent.env.get_copy(self.seed)
             observation, reward, done, info = game_copy.step(action, simulation=True)
             for j in info["result_of_action"]:
                 history.append((action, j))
             if self.config.do_roll_outs:
-                value, strategy_value = self.get_roll_out(game_copy, history.copy())
+                value = self.get_roll_out(game_copy, history.copy())
                 initial_visit_count = self.config.number_of_roll_outs - 1    # -1 because of increment in backprop
             else:
                 value = reward
@@ -206,7 +211,6 @@ class MCTSAgent:
                 done,
                 reward,
                 history,
-                strategy_value,
                 initial_visit_count=initial_visit_count
             )
         else:
@@ -229,12 +233,12 @@ class MCTSAgent:
 
     def get_roll_out(self, game, history, do_simulation_steps=False):
         if game.env.done:
-            return 0, 0 
+            return 0 
         done = False
         return_list = []
         strategy_return_list = []
         for _ in range(self.config.number_of_roll_outs):
-            game_copy = game.get_copy()
+            game_copy = game.get_copy(self.seed)
             rollout_trajectory = history.copy()
             single_return = 0
             strategy_return = 0
@@ -255,14 +259,27 @@ class MCTSAgent:
             # TODO: Combine return as reward and number of strategies then decay influence of strategies as time goes on
 
             if self.config.use_strategies:
+                no_strategies = 0
                 for strategy in self.config.strategies:
-                    decay_param = self.config.init_decay
-                    x, y, z = is_subsequence(strategy['strategy'], [b for _, b in rollout_trajectory])
-                    if y > 0:
-                        if z and single_return > 0:
-                            decay_param = 0
+                    decay_param = self.strategy_decay
 
-                        single_return *= (y*decay_param)
+                    x, y, z = is_subsequence(strategy['strategy'], [b for _, b in rollout_trajectory])
+                    if x and z:
+                        self.simulation_strategies_completed += 1
+                        single_return += y if single_return == 0 else single_return*y
+                #     else:
+                #         no_strategies += 1
+                # if no_strategies == len(self.config.strategies):
+                #     single_return = (single_return*y*decay_param)
+
+                # for strategy in self.config.strategies:
+                #     decay_param = self.strategy_decay
+                #     x, y, z = is_subsequence(strategy['strategy'], [b for _, b in rollout_trajectory])
+                #     if y > 0:
+                #         # if z and single_return > 0:
+                #         #     decay_param = 0
+
+                #         single_return = (single_return*y*decay_param)
 
                 # if strategy_return == 0:
                 #     # penalise no strategies followed in the rollout trajectory

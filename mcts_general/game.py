@@ -138,5 +138,5 @@ class DiscreteGymGame(GymGame):
         legal_actions = self.legal_actions(simulation=simulation)
         return legal_actions[self.rand.random_integers(0, len(legal_actions) - 1)]
 
-    def get_copy(self) -> "DiscreteGymGame":
-        return DiscreteGymGame(deepcopy(self.env), self.rand.randint(1e9))
+    def get_copy(self, seed) -> "DiscreteGymGame":
+        return DiscreteGymGame(deepcopy(self.env), seed)
