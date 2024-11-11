@@ -15,8 +15,17 @@ import numpy as np
 import torch
 from torch.utils.tensorboard import SummaryWriter
 import pandas as pd
+from copy import deepcopy
+
+import time
+import cProfile
+import pstats
+
 
 STRATEGY_FILE = "strategies.json"
+# SEEDS = [937, 732050807, 557438524, 855654600, 110433579, 19680801, 280109889, 403124237, 605551275, 19680801]
+
+SEEDS = [732050807, 557438524, 855654600, 110433579, 19680801, 280109889, 403124237, 605551275, 19680801]
 
 
 def save_params(args, dir_name):
@@ -57,17 +66,17 @@ def parse_args():
                         choices=['map.txt',
                                  'map_simple.txt'],
                         help='Configuration file for the environment',
-                        required=False)
-    parser.add_argument('--episodes',
+                        required=False),
+    parser.add_argument('--runs',
                         type=int,
                         default=10,
-                        choices=[10, 100],
-                        help='Number of episodes')
-    parser.add_argument('--seed',
+                        choices=[1, 10, 100],
+                        help='Number of runs')
+    parser.add_argument('--episodes',
                         type=int,
-                        default=None,
-                        help='Random seed')
-
+                        default=1,
+                        choices=[1, 10, 100],
+                        help='Number of episodes (per run)')
     parser.add_argument('--debug',
                         '-d',
                         action="store_true",
@@ -114,12 +123,11 @@ def init(env_config, seed, use_strategies):
         config.strategies = env_strategies['strategies']
 
     # init game
-    env = gym.make(env_config["name"], map_file=env_config["mapfile"], config_file=env_config["filename"])
-    game = DiscreteGymGame(env=env)
+    game = gym.make(env_config["name"], map_file=env_config["mapfile"], config_file=env_config["filename"])
 
     # set seeds
     game.reset(seed=seed)
-    agent = MCTSAgent(game, config)
+    agent = MCTSAgent(deepcopy(game), config)
 
     agent.set_seed(seed=seed)
     random.seed(seed)
@@ -141,13 +149,19 @@ def run_episode(agent, game):
     cumulative_reward = 0
     reward = 0
     agent.reset()
+    step_count = 0
     while not done:
-        action = agent.search(game, state, reward, done, history)
-        # print(action)
-        state, reward, done, info = game.step(action)
+        # t0 = time.time()
+        action = agent.search(game.unwrapped.save_state(), state, reward, done, history, game.unwrapped.legal_actions())
+        # t1 = time.time()
+        # print(f"Time taken for MCTS search: {t1-t0}")
+        state, reward, terminated, truncated, info = game.step(action)
+        done = terminated or truncated
+        # print(f"Step {step_count}: {action} ({game.move_count})")
         for j in info["result_of_action"]:
             history.append((action, j))
         cumulative_reward += reward
+        step_count += 1
 
     agent.root_node = None
 
@@ -160,51 +174,79 @@ def main(args):
     # Parse arguments
     exp_id = args.exp_id
     num_episodes = args.episodes
+    num_runs = args.runs
     debug = args.debug
     env_config = {"name": args.env,
                   "mapfile": args.env_map,
                   "filename": "config_train.json"
                   }
-    seed = args.seed
     use_strategies = args.use_strategies
-    log_dir = f"results/exp3/{exp_id}/log_{seed}"
-    save_params(args, log_dir)  # save the experiment parameters in a text file
 
+    # save the experiment parameters in a text file
+    log_dir = f"results/exp3/{exp_id}"
+    save_params(args, log_dir)  
+    cumulative_run_returns = []
     if not debug:
         writer = SummaryWriter(log_dir=log_dir)
-    cumulative_returns = []
-    agent, game = init(env_config, seed, use_strategies)
-    for episode in range(num_episodes):
-        reward = run_episode(agent, game)
-        cumulative_returns.append(reward)
-        print(f"Episode {episode + 1}: Cumulative Reward = {reward}")
+
+    for run in tqdm(range(num_runs)):
+        cumulative_returns = []
+        agent, game = init(env_config, SEEDS[run], use_strategies)
+        t0 = time.time()
+
+        for episode in range(num_episodes):
+            reward = run_episode(agent, game)
+            cumulative_returns.append(reward)
+            print(f"Episode {episode + 1}: Cumulative Reward = {reward}")
+        t1 = time.time()
+        print(f"Time taken for a single run: {t1-t0}")
+
+        game.close()
+
+        # Calculate the average cumulative return over all episodes
+        average_cumulative_return = np.mean(cumulative_returns)
+        cumulative_run_returns.append(average_cumulative_return)
         if not debug:
-            writer.add_scalar("Test/mean_episode_score", np.mean(cumulative_returns) if sum(cumulative_returns) != 0 else 0, episode)
+            writer.add_scalar("Experiment3/mean_episode_score", average_cumulative_return if sum(cumulative_returns) != 0 else 0, episode)
 
-    game.close()
-    # Calculate the average cumulative return over all episodes
-    average_cumulative_return = np.mean(cumulative_returns)
-    print(f"\nAverage Cumulative Return over {num_episodes} episodes: {average_cumulative_return}")
+        print(f"Run {run + 1}: Average Cumulative Reward = {average_cumulative_return}")
 
-    return average_cumulative_return
+        # print(f"\nAverage Cumulative Return over {num_episodes} episodes: {average_cumulative_return}")
+
+    # Calculate the average episode return over all runs (different seed for each run)
+    metrics_avg = np.mean(cumulative_run_returns)
+    metrics_std = np.std(cumulative_run_returns)
+    print(f"\nMean Episode Score over {num_runs} runs: {metrics_avg} +/- {metrics_std}")
+
+    return metrics_avg, metrics_std
 
 
 def debug_main():
     test_args = {'exp_id': "test",
                  'env': 'DungeonCrawler-v0',
                  'env_map': "map.txt",
-                 'episodes': 1,
-                 'seed': 101,
-                 'use_strategies': True,
+                 'runs': 1,
+                 'episodes': 10,
+                 'use_strategies': False,
                  'debug': True
                  }
     # --exp_id "${exp_id}" --shaping "${shaping}" --env "${env}" --env_map "${env_map}" --timesteps "${timesteps}" -d --decay_param "${decay_param}" --decay_n 0
-    main(dotdict(test_args))
+    return main(dotdict(test_args))
+
+
+def see_program_times():
+    with cProfile.Profile() as pr:
+        debug_main()
+    stats = pstats.Stats(pr)
+    stats.sort_stats(pstats.SortKey.TIME)
+    # Now you have two options, either print the data or save it as a file
+    stats.print_stats()  # Print The Stats
+    stats.dump_stats("temp2.prof")  # Saves the data in a file, can me used to see the data visually
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s')
 
-    # average_return = main(parse_args())
-    average_return = debug_main()
+    # metrics_avg, metrics_std = main(parse_args())
+    metrics_avg, metrics_std = debug_main()

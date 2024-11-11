@@ -46,12 +46,12 @@ class Weapon():
 
 class DungeonCrawlerEnv(Env):
 
-    metadata = {'render.modes': ['console', 'rgb_array', 'human']}
+    # metadata = {'render.modes': ['console', 'rgb_array', 'human']}
     _max_episode_steps = 10000
     action_desc = ['move()', 'wall()', 'lock(door)', 'collect(key)', 'collect(weapon)',
                    'kill(monster)', 'unlock(door)', 'died()', 'out_of_moves()']
 
-    def __init__(self, map_file="map.txt", config_file="config_train.json"):
+    def __init__(self, map_file="map-simple.txt", config_file="config_train.json"):
         super(DungeonCrawlerEnv, self).__init__()
         self.map_file = map_file
         self.walls = []
@@ -198,9 +198,14 @@ class DungeonCrawlerEnv(Env):
                 if self.grid[i][j] != 'X':
                     self.graph_rep.add_node((i, j))
                     if i > 0:
-                        self.graph_rep.add_edge((i-1, j), (i, j))
+                        if self.graph_rep.has_node((i-1, j)) and not self.graph_rep.has_edge((i-1, j), (i, j)):
+                            self.graph_rep.add_edge((i-1, j), (i, j))
                     if j > 0:
-                        self.graph_rep.add_edge((i, j), (i, j-1))
+                        if self.graph_rep.has_node((i, j-1)) and not self.graph_rep.has_edge((i, j), (i, j-1)):
+                            self.graph_rep.add_edge((i, j), (i, j-1))
+
+        # nx.draw(self.graph_rep)
+        # plt.show()
 
     def get_observation_space(self):
 
@@ -444,33 +449,35 @@ class DungeonCrawlerEnv(Env):
 
         return observation, info
 
+    def legal_actions(self):
+        actions = np.array(range(self.action_space.n))
+        return actions[self.valid_action_mask()] 
+
     # Functions to allow the state of the environment to be saved and reloaded (for MCTS simulation)
     def save_state(self, seed=None):
         state_dict = {"seed": seed,
-                      "monsters": self.monsters,
-                      "door": self.door,
-                      "empty": self.empty,
-                      "location": self.location,
+                      "monsters": self.monsters.copy(),
+                      "door": self.door.copy(),
+                      "location": self.location.copy(),
                       "dead": self.dead,
                       "end": self.end,
                       "score": self.score,
                       "move_count": self.move_count,
-                      "items": self.items,
-                      "weapons": self.weapons,
+                      "items": self.items.copy(),
+                      "weapons": self.weapons.copy(),
                       "key": self.key,
-                      "visited": self.visited,
+                      "visited": self.visited.copy(),
                       "done": self.done,
-                      "goal": self.goal
+                      "goal": self.goal.copy(),
+                      "empty": self.empty.copy()
                       }
         return state_dict
 
     def load_state(self, state_dict):
-        super().reset(seed=state_dict["seed"])
-
-        self.monsters = state_dict["monsters"]
         self.door = state_dict["door"]
-        self.empty = state_dict["empty"]
         self.location = state_dict["location"]
+        self.empty = state_dict["empty"]
+        self.monsters = state_dict["monsters"]
         self.dead = state_dict["dead"]
         self.end = state_dict["end"]
         self.score = state_dict["score"]
@@ -484,9 +491,9 @@ class DungeonCrawlerEnv(Env):
 
     # render the environment
 
-    def render(self, mode="console"):
-        if mode not in self.metadata["render.modes"]:
-            raise ValueError(f'Received unexpected render mode {mode}')
+    def render(self):
+        # if mode not in self.metadata["render.modes"]:
+        #     raise ValueError(f'Received unexpected render mode {mode}')
 
         self.create_grid()
         for row in self.grid:

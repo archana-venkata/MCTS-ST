@@ -7,7 +7,7 @@ class MCTSAgentConfig:
         self.root_dirichlet_alpha = 0.25
         self.root_exploration_fraction = 0.25
         self.exploration_constant = 24
-        self.num_simulations = 100
+        self.num_simulations = 50
         self.reuse_tree = False
         self.temperature = 0
         self.do_roll_outs = True

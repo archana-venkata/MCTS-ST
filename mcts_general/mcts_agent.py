@@ -8,6 +8,7 @@ import numpy as np
 import itertools
 import random
 from itertools import product
+from copy import deepcopy
 
 
 ACTIONS_STR = ["LEFT", "DOWN", "RIGHT", "UP"]
@@ -68,7 +69,7 @@ class Node:
         self.observation = None
         self.reward = 0
         self.done = False
-        self.env = None
+        self.env_state = None
         self.is_expanded = False
         self.strategy_value = 0
 
@@ -90,7 +91,7 @@ class Node:
             return 0
         return self.value_sum 
 
-    def expand(self, env, observation, done, reward, history, strategy_value=0, initial_visit_count=0):
+    def expand(self, env_state, observation, done, reward, history, valid_actions=[], strategy_value=0, initial_visit_count=0):
         """
         We expand a node using the value, reward and policy prediction obtained from the
         neural network. 
@@ -99,21 +100,20 @@ class Node:
         self.done = done
         self.reward = reward
         # if history contains partially completed strategies can initialise this to a high value
-        self.strategy_value = strategy_value
         self.observation = observation
         self.visit_count = initial_visit_count
-        self.env = env
+        self.env_state = env_state
         self.history = history
-        valid_actions = env.legal_actions(simulation=True)
+
+        self.strategy_value = strategy_value
+
+        # valid_actions = env.legal_actions(simulation=True)
         for a in valid_actions:
             self.children[a] = Node()
 
-        self.children_probs = np.ones((len(valid_actions),)) / len(valid_actions)
+        self.children_probs = np.ones((len(valid_actions),)) / len(valid_actions) if len(valid_actions) != 0 else []
 
-        # predict the probability of an action based on its history
-
-        # state.children_probs, state.predicted_reward = self.llm_policy._calculate_emperical_prob(
-        #     history, ob, valid_actions, self.env.get_goal(), 10, 0, 0.95)
+        # if len(strategy)
 
     def add_exploration_noise(self, dirichlet_alpha, exploration_fraction):
         """
@@ -133,6 +133,7 @@ class MCTSAgent:
         self.config = config
         self.node_cls = Node
         self.rollout_buffer = []
+        self.game = env
         self.strategy_decay = self.config.init_decay
         self.simulation_strategies_completed = 0
 
@@ -145,29 +146,21 @@ class MCTSAgent:
     def set_seed(self, seed=None):
         self.seed = seed
         np.random.seed(seed)
+        random.seed(seed)
 
-    def search(self, env, obs, reward, done, history, output_debug_info=False):
+    def search(self, env_state, obs, reward, done, history, legal_actions, output_debug_info=False):
         self.root_node = self.node_cls(0)
-
-        self.root_node.expand(env.get_copy(self.seed), obs, done, reward, history.copy())
-
+        self.root_node.expand(deepcopy(env_state), obs, done, reward, history.copy(), valid_actions=legal_actions)
         for i in range(self.config.num_simulations):
-            root_node, info = self.simulate(self.root_node, 0)
-            self.root_node = root_node
+            self.root_node = self.simulate()
 
-        # self.result_node.status()
-        # self.render_tree(root_node)
-        action, _ = self.select_child(self.root_node)
+        action = self.select_action(self.root_node, self.config.temperature)
 
         # every 10 steps, decay the strategic contribution
-        if self.config.use_strategies and self.simulation_strategies_completed > 0 and len(history) % 10:
+        if self.config.use_strategies and self.simulation_strategies_completed > 80 and len(history) % 10:
             self.strategy_decay *= 0.99
-        # print(f"Action: {action}")
 
-        if output_debug_info:
-            return action, info
-        else:
-            return action
+        return action
 
     def render_tree(self, node, action=None):
         print(f"node: {node.id}, action: {ACTIONS_STR[action] if action!=None else action}, value: {node.value()}")
@@ -176,50 +169,50 @@ class MCTSAgent:
             for action, node in node.children.items():
                 self.render_tree(node, action)
 
-    def simulate(self, root, depth):
+    def simulate(self):
         """
         At the root of the search tree we use the representation function to obtain a
         hidden state given the current observation.
         We then run a Monte Carlo Tree Search using only action sequences and the model
         learned by the network.
         """
-        node = root
+        node = self.root_node
         search_path = [node]
-        current_tree_depth = depth
         while node.expanded():
-            current_tree_depth += 1
             action, node = self.select_child(node)
             search_path.append(node)
 
         parent = search_path[-2]
-        history = parent.history
+        history = parent.history.copy()
+        rollout_value = 0
         if not parent.done:
-            game_copy = parent.env.get_copy(self.seed)
-            observation, reward, done, info = game_copy.step(action, simulation=True)
+            game_state_copy = deepcopy(parent.env_state)
+            self.game.unwrapped.load_state(game_state_copy)
+            observation, reward, terminated, truncated, info = self.game.step(action)
+            done = terminated or truncated
+            legal_actions = self.game.unwrapped.legal_actions()
             for j in info["result_of_action"]:
                 history.append((action, j))
-            if self.config.do_roll_outs:
-                value = self.get_roll_out(game_copy, history.copy())
-                initial_visit_count = self.config.number_of_roll_outs - 1    # -1 because of increment in backprop
-            else:
-                value = reward
-                initial_visit_count = 0
+            new_game_state = deepcopy(self.game.unwrapped.save_state())
+
+            rollout_value, strategy_value = self.get_roll_out(new_game_state, history.copy())
+            initial_visit_count = self.config.number_of_roll_outs - 1    # -1 because of increment in backprop
 
             node.expand(
-                game_copy,
+                new_game_state,
                 observation,
                 done,
                 reward,
                 history,
-                initial_visit_count=initial_visit_count
+                strategy_value=strategy_value,
+                initial_visit_count=initial_visit_count,
+                valid_actions=legal_actions
             )
         else:
-            value = 0
+            rollout_value = 0
+        self.backpropagate(search_path, rollout_value)
 
-        self.backpropagate(search_path, value)
-        # max_tree_depth = max(max_tree_depth, current_tree_depth)
-
-        return root, None
+        return search_path[0]
 
     def backpropagate(self, search_path, value):
         """
@@ -231,65 +224,52 @@ class MCTSAgent:
             node.visit_count += 1
             value = node.reward + self.config.discount * value
 
-    def get_roll_out(self, game, history, do_simulation_steps=False):
-        if game.env.done:
-            return 0 
+    def get_roll_out(self, initial_game_state, history):
+        if initial_game_state["done"]:
+            return 0, 0
         done = False
         return_list = []
         strategy_return_list = []
         for _ in range(self.config.number_of_roll_outs):
-            game_copy = game.get_copy(self.seed)
+            # TODO: handle more than 1 rollout
+            self.game.unwrapped.load_state(deepcopy(initial_game_state))
             rollout_trajectory = history.copy()
             single_return = 0
             strategy_return = 0
-            for it in range(self.config.max_roll_out_depth):
-                if done:
-                    break
+            depth = 0
+            while not done and depth < self.config.max_roll_out_depth:
+                # randomly sample an action for rollouts
+                action = random.choice(self.game.unwrapped.legal_actions())
 
-                action = game_copy.sample_action()  # randomly sample an action for rollouts
-
-                _, reward, done, info = game_copy.step(action, simulation=do_simulation_steps)
+                _, reward, terminated, truncated, info = self.game.step(action)   
+                done = terminated or truncated             
 
                 for i in info["result_of_action"]:
                     rollout_trajectory.append((action, i))
 
                 single_return += reward * self.config.discount
-
-            # what if return is number of strategies?
-            # TODO: Combine return as reward and number of strategies then decay influence of strategies as time goes on
+                depth += 1
 
             if self.config.use_strategies:
-                no_strategies = 0
+                strategy_exp_bonus = 0
                 for strategy in self.config.strategies:
-                    decay_param = self.strategy_decay
-
                     x, y, z = is_subsequence(strategy['strategy'], [b for _, b in rollout_trajectory])
-                    if x and z:
-                        self.simulation_strategies_completed += 1
-                        single_return += y if single_return == 0 else single_return*y
-                #     else:
-                #         no_strategies += 1
-                # if no_strategies == len(self.config.strategies):
-                #     single_return = (single_return*y*decay_param)
+                    if x:
+                        if y:
+                            strategy_exp_bonus = y if single_return == 0 else single_return*y
+                        if z:
+                            self.simulation_strategies_completed += 1
+            # if single_return > 0:
+            #     print("this rollout was good!")
 
-                # for strategy in self.config.strategies:
-                #     decay_param = self.strategy_decay
-                #     x, y, z = is_subsequence(strategy['strategy'], [b for _, b in rollout_trajectory])
-                #     if y > 0:
-                #         # if z and single_return > 0:
-                #         #     decay_param = 0
-
-                #         single_return = (single_return*y*decay_param)
-
-                # if strategy_return == 0:
-                #     # penalise no strategies followed in the rollout trajectory
-                #     strategy_return -= z * strategy['reward'] * decay_param
-
+                strategy_return += strategy_exp_bonus
             return_list.append(single_return)
+            strategy_return_list.append(strategy_return)
 
             self.rollout_buffer.append(rollout_trajectory)
+            self.game.reset()
 
-        return np.average(return_list)
+        return np.average(return_list), np.average(strategy_return)
 
     def select_child(self, node):
         """
@@ -299,13 +279,20 @@ class MCTSAgent:
             self.ucb_score(node, child)
             for action, child in node.children.items()
         )
-        action = np.random.choice(
-            [
+        possible_next_actions = [
                 action
                 for action, child in node.children.items()
                 if self.ucb_score(node, child) == max_ucb
             ]
-        )
+        action = np.random.choice(possible_next_actions)
+
+        if self.config.use_strategies:
+            max_strat_value = max([node.children[x].strategy_value for x in possible_next_actions])
+            possible_strategy_actions = [x for x in possible_next_actions if node.children[x].strategy_value == max_strat_value]
+
+            if max_strat_value != 0 and len(possible_strategy_actions) != 0 and len(possible_next_actions) > 1:
+                action = np.random.choice(possible_strategy_actions)
+
         return action, node.children[action]
 
     def ucb_score(self, parent, child):
@@ -335,7 +322,7 @@ class MCTSAgent:
 
         return prior_score + value_score + strategy_score
 
-    def select_action(node, temperature):
+    def select_action(self, node, temperature):
         """
         Select action according to the visit count distribution and the temperature.
         The temperature is changed dynamically with the visit_softmax_temperature function

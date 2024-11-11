@@ -59,8 +59,13 @@ class DeepCopyableGame(metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def get_copy(self) -> "DeepCopyableGame":
-        """ Returns a deep copy of your game. """
+    def load_state(self, saved_state, seed=None):
+        """ Loads copy of the game with a given state """
+        pass
+
+    @abc.abstractmethod
+    def save_state(self) -> dict:
+        """ Returns the current state of the game """
         pass
 
     def get_seed(self):
@@ -132,7 +137,7 @@ class DiscreteGymGame(GymGame):
 
     def legal_actions(self, simulation=False):
         actions = numpy.array(range(self.env.action_space.n))
-        return actions[self.env.valid_action_mask()]
+        return actions[self.env.valid_action_mask()] 
 
     def sample_action(self, simulation=False):
         legal_actions = self.legal_actions(simulation=simulation)
@@ -140,3 +145,9 @@ class DiscreteGymGame(GymGame):
 
     def get_copy(self, seed) -> "DiscreteGymGame":
         return DiscreteGymGame(deepcopy(self.env), seed)
+
+    def load_state(self, saved_state):
+        self.env.load_state(deepcopy(saved_state))
+
+    def save_state(self):
+        return self.env.save_state()
